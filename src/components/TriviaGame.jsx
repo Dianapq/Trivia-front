@@ -18,7 +18,7 @@ const TriviaGame = () => {
     setCargando(true);
     setError(null);
     try {
-      const res = await axios.post('http://localhost:5000/api/chat/trivia', {
+      const res = await axios.post('https://trivia-backend-five.vercel.app/api/chat/trivia', {
         tema: temaSeleccionado
       });
 

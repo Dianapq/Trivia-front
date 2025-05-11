@@ -12,8 +12,14 @@ const TriviaGame = () => {
   const [terminado, setTerminado] = useState(false);
   const [cargando, setCargando] = useState(false);
   const [error, setError] = useState(null);
+  const [nombreJugador, setNombreJugador] = useState('');
+  const [respuestasUsuario, setRespuestasUsuario] = useState([]);
 
   const iniciarTrivia = async (temaSeleccionado) => {
+    const nombre = prompt("Por favor, ingresa tu nombre:");
+    if (!nombre) return;
+
+    setNombreJugador(nombre);
     setTema(temaSeleccionado);
     setCargando(true);
     setError(null);
@@ -37,14 +43,39 @@ const TriviaGame = () => {
     }
   };
 
+  const enviarResultados = async () => {
+    try {
+      await axios.post('https://trivia-backend-five.vercel.app/api/session/save', {
+        playerName: nombreJugador,
+        topic: tema,
+        score: puntaje,
+        answers: respuestasUsuario
+      });
+      console.log("✅ Resultados guardados en MongoDB");
+    } catch (err) {
+      console.error("❌ Error al guardar resultados:", err.message);
+    }
+  };
+
   const responder = (opcion) => {
     if (!preguntas[preguntaActual]) return;
 
     setSeleccionada(opcion);
-    const correcta = preguntas[preguntaActual].respuesta_correcta;
+    const preguntaActualObj = preguntas[preguntaActual];
+    const correcta = preguntaActualObj.respuesta_correcta;
+
     if (opcion === correcta) {
       setPuntaje((prev) => prev + 1);
     }
+
+    setRespuestasUsuario((prev) => [
+      ...prev,
+      {
+        pregunta: preguntaActualObj.pregunta,
+        seleccionada: opcion,
+        correcta: correcta
+      }
+    ]);
 
     setTimeout(() => {
       if (preguntaActual + 1 < preguntas.length) {
@@ -52,6 +83,7 @@ const TriviaGame = () => {
         setSeleccionada(null);
       } else {
         setTerminado(true);
+        enviarResultados(); // Llama a guardar datos
       }
     }, 1000);
   };
@@ -64,6 +96,8 @@ const TriviaGame = () => {
     setSeleccionada(null);
     setTerminado(false);
     setError(null);
+    setNombreJugador('');
+    setRespuestasUsuario([]);
   };
 
   if (cargando) return <p className="text-purple-700 text-lg">⏳ Cargando preguntas...</p>;
